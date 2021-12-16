@@ -1,6 +1,6 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {HttpClient, HttpHeaders} from "@angular/common/http";
-import {of} from "rxjs";
+import {delay, exhaustMap, fromEvent, of} from "rxjs";
 import {mergeMap, tap} from "rxjs/operators";
 
 @Component({
@@ -10,6 +10,8 @@ import {mergeMap, tap} from "rxjs/operators";
 })
 export class AppComponent implements OnInit {
 
+  @ViewChild('editButton', {static: true}) editButton!: ElementRef;
+
   constructor(private http: HttpClient) {
   }
 
@@ -17,6 +19,12 @@ export class AppComponent implements OnInit {
 
     of(1,2,3,4,5,6,7,8,9).pipe(
       mergeMap((val) => this.pathMultiplePosts(val)),
+      tap(i => console.log(i))
+    ).subscribe();
+
+    fromEvent(this.editButton.nativeElement, 'click').pipe(
+      tap(() => console.log()),
+      exhaustMap(() => this.pathSinglePosts()),
       tap(i => console.log(i))
     ).subscribe();
 
@@ -33,6 +41,22 @@ export class AppComponent implements OnInit {
     let options = { headers: headers };
 
     return this.http.patch(`https://jsonplaceholder.typicode.com/posts/${postId}`, body, options);
+  }
+
+  public pathSinglePosts() {
+
+    let body = JSON.stringify({
+      body: 'Body 1 edited',
+      title: 'Title 1 edited'
+    });
+
+    let headers = new HttpHeaders({'Content-Type': 'application/json; charset:UTF-8'});
+    let options = { headers: headers };
+
+    return this.http.patch(`https://jsonplaceholder.typicode.com/posts/1`, body, options)
+      .pipe(
+        delay(2000)
+      );
   }
 
 }
